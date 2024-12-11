@@ -52,8 +52,9 @@ export function DropdownMenu({
 
 export function DropdownItem({
   className,
+  disabled,
   ...props
-}: { className?: string } & (
+}: { className?: string; disabled?: boolean } & (
   | Omit<React.ComponentPropsWithoutRef<'button'>, 'as' | 'className'>
   | Omit<React.ComponentPropsWithoutRef<typeof Link>, 'className'>
 )) {
@@ -79,7 +80,7 @@ export function DropdownItem({
   )
 
   return (
-    <Headless.MenuItem>
+    <Headless.MenuItem disabled={disabled}>
       {'href' in props ? (
         <Link {...props} className={classes} />
       ) : (
