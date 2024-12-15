@@ -2,7 +2,7 @@
 
 import * as Headless from '@headlessui/react'
 import React, { useState } from 'react'
-import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from './navbar'
+import { NavbarItem } from './navbar'
 
 function OpenMenuIcon() {
   return (
@@ -84,9 +84,8 @@ export function SidebarLayout({
 export function SidebarStackedLayout({
   navbar,
   sidebar,
-  headerbar,
   children,
-}: React.PropsWithChildren<{ navbar: React.ReactNode; sidebar: React.ReactNode; headerbar: React.ReactNode }>) {
+}: React.PropsWithChildren<{ navbar: React.ReactNode; sidebar: React.ReactNode }>) {
   let [showSidebar, setShowSidebar] = useState(false)
 
   return (
@@ -111,10 +110,9 @@ export function SidebarStackedLayout({
 
       {/* Content */}
       <main className="flex flex-1 flex-col pb-2 lg:min-w-0 lg:pl-64 lg:pr-2">
-        <header>
-          {headerbar}
+        <header id="portal" className="h-14 max-lg:hidden">
         </header>
-        <div className="grow overflow-hidden p-6 lg:rounded-lg lg:bg-white lg:p-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
+        <div className="grow overflow-y-hidden px-2 py-6 lg:rounded-lg lg:bg-white lg:px-6 lg:py-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
           {children}
         </div>
       </main>

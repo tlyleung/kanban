@@ -10,7 +10,10 @@ import {
   DropdownShortcut,
 } from '@/components/catalyst/dropdown';
 import { useKanbanDispatch } from '@/systems/kanban/context';
-import { List as ListType } from '@/systems/kanban/types';
+import {
+  ListData as ListDataType,
+  List as ListType,
+} from '@/systems/kanban/types';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import {
   Edge,
@@ -47,14 +50,20 @@ export const List = ({
   list,
   listIndex,
   boardLength,
+  editingListId,
+  setEditingListId,
 }: {
   list: ListType;
   listIndex: number;
   boardLength: number;
+  editingListId: string | null;
+  setEditingListId: (listId: string | null) => void;
 }) => {
   const dispatch = useKanbanDispatch();
 
   const listId = list.id;
+
+  const isEditing = editingListId === listId;
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const listInnerRef = useRef<HTMLDivElement | null>(null);
@@ -63,49 +72,68 @@ export const List = ({
 
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [name, setName] = useState<string>(list.name);
 
-  const addTask = () => dispatch({ type: 'task/added', listId });
-
-  const deleteList = () => dispatch({ type: 'list/deleted', listId });
+  /*
+   * Reorder actions
+   */
 
   const moveListLeft = () =>
     dispatch({
       type: 'list/moved',
-      fromIndex: listIndex,
-      toIndex: listIndex - 1,
+      startIndex: listIndex,
+      endIndex: listIndex - 1,
     });
 
   const moveListRight = () =>
     dispatch({
       type: 'list/moved',
-      fromIndex: listIndex,
-      toIndex: listIndex + 1,
+      startIndex: listIndex,
+      endIndex: listIndex + 1,
     });
 
-  const renameList = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /*
+   * Other actions
+   */
+
+  const addTask = () =>
     dispatch({
-      type: 'list/renamed',
+      type: 'task/inserted',
       listId,
-      name: e.target.value,
+      onTaskInserted: (newTask) => setEditingTaskId(newTask.id),
     });
+
+  const deleteList = () => dispatch({ type: 'list/deleted', listId });
+
+  const renameList = (name: string) => {
+    if (name !== list.name) {
+      dispatch({ type: 'list/renamed', listId, name });
+    }
   };
 
+  // Set up draggable and drop target for list
   useEffect(() => {
     invariant(listRef.current);
     invariant(listInnerRef.current);
     invariant(headerRef.current);
     invariant(scrollableRef.current);
 
+    if (isEditing) return;
+
+    const data: ListDataType = { type: 'list', listId, listIndex };
+
     return combine(
       autoScrollForElements({
         element: scrollableRef.current,
         canScroll: ({ source }) => source.data.type === 'task',
+        getAllowedAxis: () => 'vertical',
       }),
       draggable({
         element: listRef.current,
         dragHandle: headerRef.current,
-        getInitialData: () => ({ type: 'list', listId }),
+        canDrag: () => !isEditing,
+        getInitialData: () => data,
         onDragStart: () => setDragState({ type: 'is-dragging' }),
         onDrop: () => {
           setDragState({ type: 'idle' });
@@ -115,7 +143,6 @@ export const List = ({
       dropTargetForElements({
         element: listRef.current,
         getData: ({ input, element }) => {
-          const data = { listId };
           return attachClosestEdge(data, {
             input,
             element,
@@ -137,7 +164,7 @@ export const List = ({
       }),
       dropTargetForElements({
         element: listInnerRef.current,
-        getData: () => ({ listId }),
+        getData: () => data,
         canDrop: ({ source }) => source.data.type === 'task',
         getIsSticky: () => true,
         onDragEnter: () => setDropState({ type: 'is-task-over' }),
@@ -146,14 +173,14 @@ export const List = ({
         onDrop: () => setDropState({ type: 'idle' }),
       }),
     );
-  }, [listId]);
+  }, [listId, listIndex, isEditing]);
 
   return (
     <div
       ref={listRef}
       className={clsx([
         // Basic layout
-        'relative -ml-0.5 h-full w-full max-w-80 px-4',
+        'relative -ml-0.5 h-full px-4',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&
@@ -180,7 +207,7 @@ export const List = ({
           ref={listInnerRef}
           className={clsx([
             // Basic layout
-            'relative flex h-full w-full appearance-none flex-col rounded-lg py-[calc(theme(spacing[2.5])-1px)] sm:py-[calc(theme(spacing[1.5])-1px)]',
+            'relative flex h-full w-80 appearance-none flex-col rounded-lg py-[calc(theme(spacing[2.5])-1px)] sm:py-[calc(theme(spacing[1.5])-1px)]',
             // Typography
             'text-base/6 text-zinc-950 placeholder:text-zinc-500 sm:text-sm/6 dark:text-white',
             // Border
@@ -193,32 +220,42 @@ export const List = ({
         >
           <header
             ref={headerRef}
-            className="flex items-center px-[calc(theme(spacing[3.5])-1px)] sm:px-[calc(theme(spacing.3)-1px)]"
+            className="flex cursor-grab items-center px-3 active:cursor-grabbing"
           >
             {isEditing ? (
               <Input
                 autoFocus
                 type="text"
-                value={list.name}
+                value={name}
                 placeholder="List name"
-                onChange={renameList}
-                onBlur={() => setIsEditing(false)}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => {
+                  renameList(name);
+                  setEditingListId(null);
+                }}
                 onFocus={(e) => (e.target as HTMLInputElement).select()}
                 className="flex-1 bg-transparent font-semibold leading-8 outline-none"
               />
             ) : (
               <h1
-                className="flex-1 cursor-default truncate font-semibold leading-8"
-                onClick={() => setIsEditing(true)}
+                className="flex-1 truncate font-semibold leading-8"
+                onClick={() => setEditingListId(listId)}
               >
                 {list.name}
               </h1>
             )}
-            <Dropdown as="div" data-slot="actions">
-              <DropdownButton plain aria-label="More options">
+            <Dropdown>
+              <DropdownButton
+                plain
+                aria-label="More options"
+                data-testid={`more-options-button-${listId}`}
+              >
                 <EllipsisHorizontalIcon />
               </DropdownButton>
-              <DropdownMenu anchor="bottom end">
+              <DropdownMenu
+                anchor="bottom end"
+                data-testid={`more-options-menu-${listId}`}
+              >
                 <DropdownSection>
                   <DropdownHeading>Reorder</DropdownHeading>
                   <DropdownItem
@@ -254,39 +291,39 @@ export const List = ({
               // Label layout
               '[&>[data-slot=label]]:col-start-2 [&>[data-slot=label]]:row-start-1 [&>[data-slot=label]]:justify-self-start',
               // Padding
-              'px-[calc(theme(spacing[3.5])-1px)] py-[calc(theme(spacing[2.5]))] sm:px-[calc(theme(spacing.3)-1px)] sm:py-[calc(theme(spacing[1.5]))]',
+              'px-3 py-[calc(theme(spacing[2.5]))] sm:py-[calc(theme(spacing[1.5]))]',
 
               'hover:bg-zinc-950/5 dark:hover:bg-white/10',
             )}
             onClick={addTask}
           >
             <PlusIcon data-slot="control" className="h-4 w-4" />
-            <label data-slot="label" className="cursor-pointer">
-              Add a task
-            </label>
+            <label data-slot="label">Add a task</label>
           </Button>
           <ol
             ref={scrollableRef}
-            className="flex-1 overflow-y-auto scroll-smooth pt-0.5"
+            className="flex-1 pt-0.5"
+            style={{ overflowY: 'scroll' }}
           >
-            {list.uncompletedTasks.map((task, index) => (
-              <Task
-                key={task.id}
-                task={task}
-                taskIndex={index}
-                listId={listId}
-                listLength={list.uncompletedTasks.length}
-              />
-            ))}
-            {list.completedTasks.map((task, index) => (
-              <Task
-                key={task.id}
-                task={task}
-                taskIndex={index}
-                listId={listId}
-                listLength={list.completedTasks.length}
-              />
-            ))}
+            {[
+              { tasks: list.uncompletedTasks, isCompleted: false },
+              { tasks: list.completedTasks, isCompleted: true },
+            ].map(({ tasks, isCompleted }) =>
+              tasks.map((task, index) => (
+                <Task
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  listId={listId}
+                  ancestorIds={[]}
+                  previousId={tasks[index - 1]?.id ?? null}
+                  nextId={tasks[index + 1]?.id ?? null}
+                  isCompleted={isCompleted}
+                  editingTaskId={editingTaskId}
+                  setEditingTaskId={setEditingTaskId}
+                />
+              )),
+            )}
           </ol>
         </div>
       </div>

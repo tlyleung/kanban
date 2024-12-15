@@ -7,7 +7,6 @@ import {
   DropdownLabel,
   DropdownMenu,
 } from '@/components/catalyst/dropdown';
-import { Link } from '@/components/catalyst/link';
 import {
   Navbar,
   NavbarItem,
@@ -25,7 +24,6 @@ import {
   SidebarSection,
 } from '@/components/catalyst/sidebar';
 import { SidebarStackedLayout } from '@/components/catalyst/sidebar-layout';
-import { useKanbanDispatch, useKanbanHistory } from '@/systems/kanban/context';
 import {
   ArrowRightStartOnRectangleIcon,
   ChevronDownIcon,
@@ -35,12 +33,7 @@ import {
   PlusIcon,
   UserCircleIcon,
 } from '@heroicons/react/16/solid';
-import {
-  ArrowUturnLeftIcon as ArrowUturnLeftIcon20,
-  ArrowUturnRightIcon as ArrowUturnRightIcon20,
-  PlusIcon as PlusIcon20,
-} from '@heroicons/react/20/solid';
-import { usePathname } from 'next/navigation';
+import { PlusIcon as PlusIcon20 } from '@heroicons/react/20/solid';
 
 function AccountDropdownMenu({
   anchor,
@@ -68,11 +61,6 @@ function AccountDropdownMenu({
 }
 
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  const { past, present, future } = useKanbanHistory();
-  const dispatch = useKanbanDispatch();
-
   return (
     <SidebarStackedLayout
       navbar={
@@ -145,7 +133,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
             </SidebarSection>
             <SidebarSection className="max-lg:hidden">
               <SidebarHeading>Boards</SidebarHeading>
-              <SidebarItem href="#" current={pathname === '/'}>
+              <SidebarItem href="#" current>
                 Board 1
               </SidebarItem>
             </SidebarSection>
@@ -175,30 +163,6 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
             </Dropdown>
           </SidebarFooter>
         </Sidebar>
-      }
-      headerbar={
-        <Navbar className="max-lg:hidden">
-          <Link href="/" aria-label="Home">
-            Board 1
-          </Link>
-          <NavbarSpacer />
-          <NavbarSection>
-            <NavbarItem
-              aria-label="Undo"
-              disabled={past.length === 0}
-              onClick={() => dispatch({ type: 'board/undo' })}
-            >
-              <ArrowUturnLeftIcon20 />
-            </NavbarItem>
-            <NavbarItem
-              aria-label="Redo"
-              disabled={future.length === 0}
-              onClick={() => dispatch({ type: 'board/redo' })}
-            >
-              <ArrowUturnRightIcon20 />
-            </NavbarItem>
-          </NavbarSection>
-        </Navbar>
       }
     >
       {children}

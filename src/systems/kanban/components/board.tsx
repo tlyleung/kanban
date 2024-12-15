@@ -1,29 +1,31 @@
 'use client';
 
 import { useKanbanDispatch, useKanbanHistory } from '@/systems/kanban/context';
-import { Task as TaskType } from '@/systems/kanban/types';
-import {
-  Edge,
-  extractClosestEdge,
-} from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { extractInstruction } from '@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item';
 import { getReorderDestinationIndex } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index';
 import {
   ElementDragPayload,
   monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import type { DragLocationHistory } from '@atlaskit/pragmatic-drag-and-drop/types';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import invariant from 'tiny-invariant';
 
+import { ListData as ListDataType, TaskData as TaskDataType } from '../types';
 import { List } from './list';
+import { Portal } from './portal';
 
 export const Board = () => {
-  const { present } = useKanbanHistory();
+  const scrollableRef = useRef<HTMLDivElement | null>(null);
+
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+
+  const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
 
-  const lists = present;
-
-  const handleDrop = useCallback(
+  const handleListDrop = useCallback(
     ({
       source,
       location,
@@ -31,157 +33,189 @@ export const Board = () => {
       source: ElementDragPayload;
       location: DragLocationHistory;
     }) => {
-      const findListById = (listId: number) => {
-        const list = lists.find((list) => list.id === listId);
-        invariant(list, `List with id ${listId} must exist`);
-        return list;
-      };
-
-      const findTaskIndex = (tasks: TaskType[], taskId: number) => {
-        const index = tasks.findIndex((task) => task.id === taskId);
-        invariant(index !== -1, `Task with id ${taskId} must exist`);
-        return index;
-      };
-
       const { dropTargets } = location.current;
+      if (!dropTargets.length) return; // Early exit if no drop targets
 
-      // Early exit if no drop targets
-      if (!dropTargets.length) return;
+      // Get source list
+      const { listIndex: sourceListIndex } = source.data as ListDataType;
 
-      if (source.data.type === 'list') {
-        const sourceListId = source.data.listId;
-        invariant(typeof sourceListId === 'number');
-        const sourceIndex = lists.findIndex((list) => list.id === sourceListId);
-        const target = location.current.dropTargets[0];
-        const indexOfTarget: number = lists.findIndex(
-          (list) => list.id === target.data.listId,
-        );
-        const closestEdgeOfTarget: Edge | null = extractClosestEdge(
-          target.data,
-        );
+      // Get destination list
+      const [destinationListRecord] = dropTargets;
+      const { listIndex: destinationListIndex } =
+        destinationListRecord.data as ListDataType;
 
-        const toIndex = getReorderDestinationIndex({
-          startIndex: sourceIndex,
-          indexOfTarget,
-          closestEdgeOfTarget,
-          axis: 'horizontal',
-        });
+      const closestEdgeOfTarget = extractClosestEdge(
+        destinationListRecord.data,
+      );
+
+      const endIndex = getReorderDestinationIndex({
+        startIndex: sourceListIndex,
+        indexOfTarget: destinationListIndex,
+        closestEdgeOfTarget,
+        axis: 'horizontal',
+      });
+
+      // Early exit if no change in list index
+      if (endIndex === sourceListIndex) return;
+
+      dispatch({
+        type: 'list/moved',
+        startIndex: sourceListIndex,
+        endIndex,
+      });
+    },
+    [dispatch],
+  );
+
+  const handleTaskDrop = useCallback(
+    ({
+      source,
+      location,
+    }: {
+      source: ElementDragPayload;
+      location: DragLocationHistory;
+    }) => {
+      const { dropTargets } = location.current;
+      if (!dropTargets.length) return; // Early exit if no drop targets
+
+      // Get source list and task
+      const {
+        taskId: sourceTaskId,
+        taskPreviousId: sourceTaskPreviousId,
+        taskNextId: sourceTaskNextId,
+        listId: sourceListId,
+      } = source.data as TaskDataType;
+
+      // Drop logic for 1 drop target (dropping task onto a list)
+      if (dropTargets.length === 1) {
+        // Get destination list
+        const [destinationListRecord] = dropTargets;
+        const { listId: destinationListId } =
+          destinationListRecord.data as ListDataType;
+
+        // Early exit if dropping task onto same list when already at top
+        if (destinationListId === sourceListId && sourceTaskPreviousId === null)
+          return;
 
         dispatch({
-          type: 'list/moved',
-          fromIndex: sourceIndex,
-          toIndex: toIndex,
+          type: 'task/moved',
+          listId: sourceListId,
+          taskId: sourceTaskId,
+          destinationListId,
         });
       }
 
-      if (source.data.type === 'task') {
-        const { taskId } = source.data;
-        invariant(typeof taskId === 'number');
+      // Drop logic for 2 drop targets (dropping task onto a task)
+      if (dropTargets.length === 2) {
+        // Get destination task
+        const [destinationTaskRecord] = dropTargets;
+        const {
+          taskId: destinationTaskId,
+          listId: destinationListId,
+          taskAncestorIds: destinationTaskAncestorIds,
+          taskParentId: destinationTaskParentId,
+          taskPreviousId: destinationTaskPreviousId,
+        } = destinationTaskRecord.data as TaskDataType;
 
-        // Get source list
-        const [, sourceListRecord] = location.initial.dropTargets;
-        const sourceListId = sourceListRecord.data.listId;
-        invariant(typeof sourceListId === 'number');
-        const sourceList = findListById(sourceListId);
-        const sourceIndex = findTaskIndex(sourceList.uncompletedTasks, taskId);
+        const instruction = extractInstruction(destinationTaskRecord.data);
 
-        // Drop logic for 1 drop target (dropping onto a list)
-        if (dropTargets.length === 1) {
-          // Get destination list
-          const [destinationListRecord] = dropTargets;
-          const destinationListId = destinationListRecord.data.listId;
-          invariant(typeof destinationListId === 'number');
-          const destinationList = findListById(destinationListId);
-
-          let toIndex: number;
-
-          if (sourceListId === destinationListId) {
-            // Reordering within same list
-            toIndex = getReorderDestinationIndex({
-              startIndex: sourceIndex,
-              indexOfTarget: sourceList.uncompletedTasks.length - 1,
-              closestEdgeOfTarget: null,
-              axis: 'vertical',
-            });
-          } else {
-            // Reordering across lists
-            toIndex = destinationList.uncompletedTasks.length;
-          }
-
-          dispatch({
-            type: 'task/moved',
-            fromListId: Number(sourceListId),
-            fromIndex: sourceIndex,
-            toListId: Number(destinationListId),
-            toIndex: toIndex,
-          });
+        // Early exit if dropping task onto itself
+        switch (destinationTaskId) {
+          case sourceTaskId:
+            return;
+          case sourceTaskNextId && instruction?.type === 'reorder-above':
+            return;
+          case sourceTaskPreviousId && instruction?.type === 'reorder-below':
+            return;
         }
 
-        // Drop logic for 2 drop targets (dropping onto a task)
-        if (dropTargets.length === 2) {
-          // Get destination list and task
-          const [destinationTaskRecord, destinationListRecord] = dropTargets;
-          const destinationTaskId = destinationTaskRecord.data.taskId;
-          const destinationListId = destinationListRecord.data.listId;
-          invariant(typeof destinationTaskId === 'number');
-          invariant(typeof destinationListId === 'number');
-          const destinationList = findListById(destinationListId);
-          const destinationIndex = findTaskIndex(
-            destinationList.uncompletedTasks,
-            destinationTaskId,
-          );
+        // Early exit if dropping onto a task that is a child of the source task
+        if (destinationTaskAncestorIds.includes(sourceTaskId)) return;
 
-          const closestEdgeOfTarget = extractClosestEdge(
-            destinationTaskRecord.data,
-          );
-
-          let toIndex: number;
-
-          if (sourceListId === destinationListId) {
-            // Reordering within same list
-            toIndex = getReorderDestinationIndex({
-              startIndex: sourceIndex,
-              indexOfTarget: destinationIndex,
-              closestEdgeOfTarget,
-              axis: 'vertical',
+        switch (instruction?.type) {
+          case 'make-child':
+            dispatch({
+              type: 'task/moved',
+              listId: sourceListId,
+              taskId: sourceTaskId,
+              parentId: destinationTaskId,
+              destinationListId,
             });
-          } else {
-            // Reordering across lists
-            toIndex =
-              closestEdgeOfTarget === 'bottom'
-                ? destinationIndex + 1
-                : destinationIndex;
+            break;
+          case 'reorder-above': {
+            dispatch({
+              type: 'task/moved',
+              listId: sourceListId,
+              taskId: sourceTaskId,
+              parentId: destinationTaskParentId ?? undefined,
+              previousId: destinationTaskPreviousId ?? undefined,
+              destinationListId,
+            });
+            break;
           }
-
-          dispatch({
-            type: 'task/moved',
-            fromListId: Number(sourceListId),
-            fromIndex: sourceIndex,
-            toListId: Number(destinationListId),
-            toIndex: toIndex,
-          });
+          case 'reorder-below':
+            dispatch({
+              type: 'task/moved',
+              listId: sourceListId,
+              taskId: sourceTaskId,
+              parentId: destinationTaskParentId ?? undefined,
+              previousId: destinationTaskId,
+              destinationListId,
+            });
+            break;
         }
       }
     },
-    [lists, dispatch],
+    [dispatch],
+  );
+
+  useEffect(
+    () =>
+      monitorForElements({
+        canMonitor: ({ source }) => source.data.type === 'list',
+        onDrop: handleListDrop,
+      }),
+    [handleListDrop],
+  );
+
+  useEffect(
+    () =>
+      monitorForElements({
+        canMonitor: ({ source }) => source.data.type === 'task',
+        onDrop: handleTaskDrop,
+      }),
+    [handleTaskDrop],
   );
 
   useEffect(() => {
-    return monitorForElements({
-      onDrop: handleDrop,
+    invariant(scrollableRef.current);
+
+    return autoScrollForElements({
+      element: scrollableRef.current,
+      canScroll: ({ source }) => source.data.type === 'list',
+      getAllowedAxis: () => 'horizontal',
     });
-  }, [handleDrop]);
+  }, []);
 
   return (
-    <div className="flex h-full items-start pl-0.5">
-      {lists.map((list, listIndex) => (
-        <List
-          key={list.id}
-          list={list}
-          listIndex={listIndex}
-          boardLength={lists.length}
-        />
-      ))}
-    </div>
+    <>
+      <Portal setEditingListId={setEditingListId} />
+      <div
+        ref={scrollableRef}
+        className="flex h-full items-start pl-0.5"
+        style={{ overflowX: 'scroll' }}
+      >
+        {lists.map((list, listIndex) => (
+          <List
+            key={list.id}
+            list={list}
+            listIndex={listIndex}
+            boardLength={lists.length}
+            editingListId={editingListId}
+            setEditingListId={setEditingListId}
+          />
+        ))}
+      </div>
+    </>
   );
 };
