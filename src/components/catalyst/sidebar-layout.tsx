@@ -116,7 +116,7 @@ export function SidebarStackedLayout({
           <NavbarSection id="desktop-portal"></NavbarSection>
           </Navbar>
         </header>
-        <div className="grow overflow-y-hidden px-2 py-6 lg:rounded-lg lg:bg-white lg:px-6 lg:py-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
+        <div className="grow overflow-hidden lg:rounded-lg lg:bg-white lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
           {children}
         </div>
       </main>

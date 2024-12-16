@@ -204,7 +204,7 @@ export const Board = () => {
       <div
         ref={scrollableRef}
         data-testid="board"
-        className="flex h-full items-start pl-0.5"
+        className="flex h-full items-start overflow-x-auto px-2 py-6 lg:px-6 lg:py-10"
         style={{ overflowX: 'scroll' }}
       >
         {lists.map((list, listIndex) => (

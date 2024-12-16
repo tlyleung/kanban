@@ -182,7 +182,7 @@ export const List = ({
       data-testid={`list-${listId}`}
       className={clsx([
         // Basic layout
-        'relative -ml-0.5 h-full px-4',
+        'relative -ml-0.5 flex max-h-full w-80 flex-shrink-0 flex-col overflow-y-hidden px-4',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&
@@ -196,7 +196,7 @@ export const List = ({
       <div
         className={clsx([
           // Basic layout
-          'relative h-full',
+          'relative flex min-h-0 flex-1 flex-col',
           // Background color + shadow applied to inset pseudo element, so shadow blends with border in light mode
           'before:absolute before:inset-px before:rounded-[calc(theme(borderRadius.lg)-1px)] before:bg-white before:shadow',
           // Background color is moved to control and shadow is removed in dark mode so hide `before` pseudo
@@ -209,7 +209,7 @@ export const List = ({
           ref={listInnerRef}
           className={clsx([
             // Basic layout
-            'relative flex h-full w-80 appearance-none flex-col rounded-lg py-[calc(theme(spacing[2.5])-1px)] sm:py-[calc(theme(spacing[1.5])-1px)]',
+            'relative flex min-h-0 flex-1 appearance-none flex-col rounded-lg py-[calc(theme(spacing[2.5])-1px)] sm:py-[calc(theme(spacing[1.5])-1px)]',
             // Typography
             'text-base/6 text-zinc-950 placeholder:text-zinc-500 sm:text-sm/6 dark:text-white',
             // Border
