@@ -106,9 +106,10 @@ export const List = ({
 
   const deleteList = () => dispatch({ type: 'list/deleted', listId });
 
-  const renameList = (name: string) => {
+  const renameList = () => {
     if (name !== list.name) {
       dispatch({ type: 'list/renamed', listId, name });
+      setEditingListId(null);
     }
   };
 
@@ -178,6 +179,7 @@ export const List = ({
   return (
     <div
       ref={listRef}
+      data-testid={`list-${listId}`}
       className={clsx([
         // Basic layout
         'relative -ml-0.5 h-full px-4',
@@ -224,20 +226,20 @@ export const List = ({
           >
             {isEditing ? (
               <Input
+                data-testid="list-input"
                 autoFocus
                 type="text"
                 value={name}
                 placeholder="List name"
                 onChange={(e) => setName(e.target.value)}
-                onBlur={() => {
-                  renameList(name);
-                  setEditingListId(null);
-                }}
+                onBlur={renameList}
                 onFocus={(e) => (e.target as HTMLInputElement).select()}
+                onKeyDown={(e) => e.key === 'Enter' && renameList()}
                 className="flex-1 bg-transparent font-semibold leading-8 outline-none"
               />
             ) : (
               <h1
+                data-testid="list-name"
                 className="flex-1 truncate font-semibold leading-8"
                 onClick={() => setEditingListId(listId)}
               >
@@ -283,6 +285,7 @@ export const List = ({
             </Dropdown>
           </header>
           <Button
+            data-testid="add-task-button"
             className={clsx(
               // Base layout
               'grid grid-cols-[1.125rem_1fr] items-center gap-x-2.5 gap-y-1 sm:grid-cols-[1rem_1fr]',

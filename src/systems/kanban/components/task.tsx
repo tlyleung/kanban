@@ -244,9 +244,10 @@ export const Task = ({
 
   const deleteTask = () => dispatch({ type: 'task/deleted', listId, taskId });
 
-  const renameTask = (text: string) => {
+  const renameTask = () => {
     if (text !== task.text) {
       dispatch({ type: 'task/renamed', listId, taskId, text });
+      setEditingTaskId(null);
     }
   };
 
@@ -336,6 +337,7 @@ export const Task = ({
     <>
       <li
         ref={taskRef}
+        data-testid={`task-${taskId}`}
         className={clsx([
           'relative -mt-0.5',
           !isCompleted && 'cursor-grab active:cursor-grabbing',
@@ -369,16 +371,15 @@ export const Task = ({
           <Checkbox checked={isCompleted} onChange={toggleTask} />
           {isEditing ? (
             <Input
+              data-testid="task-input"
               autoFocus
               type="text"
               value={text}
               placeholder="Task name"
               onChange={(e) => setText(e.target.value)}
-              onBlur={() => {
-                renameTask(text);
-                setEditingTaskId(null);
-              }}
+              onBlur={renameTask}
               onFocus={(e) => (e.target as HTMLInputElement).select()}
+              onKeyDown={(e) => e.key === 'Enter' && renameTask()}
               className={clsx([
                 'block w-full bg-transparent outline-none',
                 'py-[calc(theme(spacing[2.5]))] sm:py-[calc(theme(spacing[1.5]))]',
@@ -386,6 +387,7 @@ export const Task = ({
             />
           ) : (
             <div
+              data-testid="task-text"
               className={clsx([
                 'block w-full truncate',
                 'py-[calc(theme(spacing[2.5]))] sm:py-[calc(theme(spacing[1.5]))]',

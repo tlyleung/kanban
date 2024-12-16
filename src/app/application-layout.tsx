@@ -66,6 +66,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
       navbar={
         <Navbar>
           <NavbarSpacer />
+          <NavbarSection id="mobile-portal"></NavbarSection>
           <NavbarSection>
             <Dropdown>
               <DropdownButton as={NavbarItem}>

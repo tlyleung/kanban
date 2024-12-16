@@ -199,9 +199,11 @@ export const Board = () => {
 
   return (
     <>
-      <Portal setEditingListId={setEditingListId} />
+      <Portal elementId="desktop-portal" setEditingListId={setEditingListId} />
+      <Portal elementId="mobile-portal" setEditingListId={setEditingListId} />
       <div
         ref={scrollableRef}
+        data-testid="board"
         className="flex h-full items-start pl-0.5"
         style={{ overflowX: 'scroll' }}
       >
