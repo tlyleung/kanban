@@ -46,6 +46,12 @@ export type ListData = {
   listIndex: number;
 };
 
+export type SidebarListItemData = {
+  type: 'sidebar-list-item';
+  listId: string;
+  listIndex: number;
+};
+
 export type Task = {
   id: string;
   text: string;
