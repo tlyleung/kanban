@@ -33,7 +33,10 @@ import {
   PlusIcon,
   UserCircleIcon,
 } from '@heroicons/react/16/solid';
-import { PlusIcon as PlusIcon20 } from '@heroicons/react/20/solid';
+import {
+  PlusIcon as PlusIcon20,
+  ViewColumnsIcon as ViewColumnsIcon20,
+} from '@heroicons/react/20/solid';
 
 function AccountDropdownMenu({
   anchor,
@@ -66,7 +69,6 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
       navbar={
         <Navbar>
           <NavbarSpacer />
-          <NavbarSection id="mobile-portal"></NavbarSection>
           <NavbarSection>
             <Dropdown>
               <DropdownButton as={NavbarItem}>
@@ -127,17 +129,17 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
           </SidebarHeader>
           <SidebarBody>
             <SidebarSection>
-              <SidebarItem href="#">
-                <PlusIcon20 />
-                <SidebarLabel>Create new board</SidebarLabel>
-              </SidebarItem>
-            </SidebarSection>
-            <SidebarSection className="max-lg:hidden">
               <SidebarHeading>Boards</SidebarHeading>
-              <SidebarItem href="#" current>
-                Board 1
+              <SidebarItem disabled>
+                <PlusIcon20 />
+                <SidebarLabel>Add a board</SidebarLabel>
+              </SidebarItem>
+              <SidebarItem disabled current>
+                <ViewColumnsIcon20 />
+                <SidebarLabel>Board 1</SidebarLabel>
               </SidebarItem>
             </SidebarSection>
+            <SidebarSection className="lists-portals"></SidebarSection>
           </SidebarBody>
           <SidebarFooter className="max-lg:hidden">
             <Dropdown>

@@ -182,7 +182,7 @@ export const List = ({
       data-testid={`list-${listId}`}
       className={clsx([
         // Basic layout
-        'relative -ml-0.5 flex max-h-full w-80 flex-shrink-0 flex-col overflow-y-hidden px-4',
+        'relative -ml-0.5 flex max-h-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:w-80',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&

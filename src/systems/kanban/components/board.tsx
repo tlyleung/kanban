@@ -15,15 +15,16 @@ import invariant from 'tiny-invariant';
 
 import { ListData as ListDataType, TaskData as TaskDataType } from '../types';
 import { List } from './list';
-import { Portal } from './portal';
+import { ListsPortal, ShortcutsPortal } from './portals';
 
 export const Board = () => {
   const scrollableRef = useRef<HTMLDivElement | null>(null);
 
-  const [editingListId, setEditingListId] = useState<string | null>(null);
-
   const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
+
+  const [activeListId, setActiveListId] = useState<string>(lists[0].id);
+  const [editingListId, setEditingListId] = useState<string | null>(null);
 
   const handleListDrop = useCallback(
     ({
@@ -199,12 +200,21 @@ export const Board = () => {
 
   return (
     <>
-      <Portal elementId="desktop-portal" setEditingListId={setEditingListId} />
-      <Portal elementId="mobile-portal" setEditingListId={setEditingListId} />
+      <ListsPortal
+        className="lists-portals"
+        index={1}
+        activeListId={activeListId}
+        setActiveListId={setActiveListId}
+        setEditingListId={setEditingListId}
+      />
+      <ShortcutsPortal
+        elementId="shortcuts-portal"
+        setEditingListId={setEditingListId}
+      />
       <div
         ref={scrollableRef}
         data-testid="board"
-        className="flex h-full items-start overflow-x-auto px-2 py-6 lg:px-6 lg:py-10"
+        className="hidden h-full items-start overflow-x-auto px-2 py-6 lg:flex lg:px-6 lg:py-10"
         style={{ overflowX: 'scroll' }}
       >
         {lists.map((list, listIndex) => (
@@ -217,6 +227,16 @@ export const Board = () => {
             setEditingListId={setEditingListId}
           />
         ))}
+      </div>
+      <div className="lg:hidden">
+        <List
+          key={activeListId}
+          list={lists.find((list) => list.id === activeListId)!}
+          listIndex={lists.findIndex((list) => list.id === activeListId)}
+          boardLength={lists.length}
+          editingListId={editingListId}
+          setEditingListId={setEditingListId}
+        />
       </div>
     </>
   );
