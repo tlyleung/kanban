@@ -31,8 +31,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -49,8 +52,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId="list-1"
         setEditingListId={setEditingListId}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -74,8 +80,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId="list-1"
         setEditingListId={setEditingListId}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -93,8 +102,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -114,8 +126,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={1}
         boardLength={3}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -137,8 +152,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={1}
         boardLength={3}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -164,8 +182,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -185,8 +206,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -208,8 +232,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId="list-1" // Set this to match the mock list ID
         setEditingListId={setEditingListId}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 
@@ -231,8 +258,11 @@ describe('List Component', () => {
         list={mockList}
         listIndex={0}
         boardLength={1}
+        activeListId="list-1"
         editingListId={null}
         setEditingListId={vi.fn()}
+        editingTaskId={null}
+        setEditingTaskId={vi.fn()}
       />,
     );
 

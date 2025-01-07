@@ -31,6 +31,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -53,6 +62,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -73,7 +91,7 @@ describe('Task Component', () => {
       text: 'Updated Task Name',
     });
 
-    expect(setEditingTaskId).toHaveBeenCalledWith(null);
+    expect(setEditingTaskId).toHaveBeenCalledWith('task-8');
   });
 
   it('does not dispatch rename when task text is unchanged', () => {
@@ -83,6 +101,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -97,7 +124,7 @@ describe('Task Component', () => {
     fireEvent.blur(input);
 
     expect(mockDispatch).not.toHaveBeenCalled();
-    expect(setEditingTaskId).toHaveBeenCalledWith(null);
+    expect(setEditingTaskId).toHaveBeenCalledWith('task-8');
   });
 
   it('renders the dropdown options when more options is clicked', () => {
@@ -106,6 +133,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -130,6 +166,15 @@ describe('Task Component', () => {
   //       task={mockTask}
   //       index={1}
   //       listId="list-2"
+  //       taskIds={[
+  //         'task-4',
+  //         'task-5',
+  //         'task-8',
+  //         'task-9',
+  //         'task-10',
+  //         'task-6',
+  //         'task-7',
+  //       ]}
   //       ancestorIds={[]}
   //       previousId="task-4"
   //       nextId="task-6"
@@ -159,6 +204,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -188,6 +242,15 @@ describe('Task Component', () => {
         task={mockInnerTask}
         index={0}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={['task-5']}
         previousId={null}
         nextId="task-9"
@@ -221,6 +284,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -247,6 +319,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -273,6 +354,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -300,6 +390,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -331,6 +430,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -361,6 +469,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -389,6 +506,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"
@@ -414,6 +540,15 @@ describe('Task Component', () => {
         task={mockTask}
         index={1}
         listId="list-2"
+        taskIds={[
+          'task-4',
+          'task-5',
+          'task-8',
+          'task-9',
+          'task-10',
+          'task-6',
+          'task-7',
+        ]}
         ancestorIds={[]}
         previousId="task-4"
         nextId="task-6"

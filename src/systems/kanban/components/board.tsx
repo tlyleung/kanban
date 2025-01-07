@@ -25,6 +25,7 @@ export const Board = () => {
 
   const [activeListId, setActiveListId] = useState<string>(lists[0].id);
   const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const handleListDrop = useCallback(
     ({
@@ -214,7 +215,7 @@ export const Board = () => {
       <div
         ref={scrollableRef}
         data-testid="board"
-        className="hidden h-full items-start overflow-x-auto px-2 py-6 lg:flex lg:px-6 lg:py-10"
+        className="flex h-full items-start overflow-x-auto px-2 py-6 lg:px-6 lg:py-10"
         style={{ overflowX: 'scroll' }}
       >
         {lists.map((list, listIndex) => (
@@ -223,20 +224,13 @@ export const Board = () => {
             list={list}
             listIndex={listIndex}
             boardLength={lists.length}
+            activeListId={activeListId}
             editingListId={editingListId}
             setEditingListId={setEditingListId}
+            editingTaskId={editingTaskId}
+            setEditingTaskId={setEditingTaskId}
           />
         ))}
-      </div>
-      <div className="lg:hidden">
-        <List
-          key={activeListId}
-          list={lists.find((list) => list.id === activeListId)!}
-          listIndex={lists.findIndex((list) => list.id === activeListId)}
-          boardLength={lists.length}
-          editingListId={editingListId}
-          setEditingListId={setEditingListId}
-        />
       </div>
     </>
   );

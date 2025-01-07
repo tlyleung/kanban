@@ -30,6 +30,7 @@ import {
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useHotkeys } from 'react-hotkeys-hook';
 import invariant from 'tiny-invariant';
 
 import {
@@ -154,8 +155,8 @@ export function ListsPortal({
       type: 'list/inserted',
       onListInserted: (list) => {
         setTimeout(() => {
-          setActiveListId(list.id);
           setEditingListId(list.id);
+          setActiveListId(list.id);
         }, 0); // Avoid bad setState on render
       },
     });
@@ -232,7 +233,11 @@ export function ListsPortal({
   return createPortal(
     <>
       <SidebarHeading>Lists</SidebarHeading>
-      <SidebarItem onClick={addList}>
+      <SidebarItem
+        aria-label="Add list"
+        data-testid="add-list-button"
+        onClick={addList}
+      >
         <PlusIcon20 />
         <SidebarLabel>Add a list</SidebarLabel>
       </SidebarItem>
@@ -274,6 +279,22 @@ export function ShortcutsPortal({
   const undo = () => dispatch({ type: 'board/undo' });
 
   const redo = () => dispatch({ type: 'board/redo' });
+
+  /*
+   * Hotkeys
+   */
+
+  useHotkeys('ctrl+z', undo, { enableOnFormTags: true, preventDefault: true });
+
+  useHotkeys('ctrl+shift+z', redo, {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+l', addList, {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
 
   useEffect(
     () => setPortalNode(document.getElementById(elementId)),

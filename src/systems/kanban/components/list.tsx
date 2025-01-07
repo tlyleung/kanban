@@ -14,6 +14,7 @@ import {
   ListData as ListDataType,
   List as ListType,
 } from '@/systems/kanban/types';
+import type { Task as TaskType } from '@/systems/kanban/types';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import {
   Edge,
@@ -35,6 +36,7 @@ import {
 } from '@heroicons/react/16/solid';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import invariant from 'tiny-invariant';
 
 import { Task } from './task';
@@ -50,14 +52,20 @@ export const List = ({
   list,
   listIndex,
   boardLength,
+  activeListId,
   editingListId,
   setEditingListId,
+  editingTaskId,
+  setEditingTaskId,
 }: {
   list: ListType;
   listIndex: number;
   boardLength: number;
+  activeListId: string | null;
   editingListId: string | null;
   setEditingListId: (listId: string | null) => void;
+  editingTaskId: string | null;
+  setEditingTaskId: (taskId: string | null) => void;
 }) => {
   const dispatch = useKanbanDispatch();
 
@@ -72,8 +80,23 @@ export const List = ({
 
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [name, setName] = useState<string>(list.name);
+
+  const taskIds = (() => {
+    function flattenTasks(tasks: TaskType[]): string[] {
+      return tasks.reduce<string[]>((acc, task) => {
+        acc.push(task.id);
+        if (task.children.length > 0) {
+          acc.push(...flattenTasks(task.children));
+        }
+        return acc;
+      }, []);
+    }
+
+    const uncompletedTaskIds = flattenTasks(list.uncompletedTasks);
+    const completedTaskIds = flattenTasks(list.completedTasks);
+    return [...uncompletedTaskIds, ...completedTaskIds];
+  })();
 
   /*
    * Reorder actions
@@ -101,7 +124,9 @@ export const List = ({
     dispatch({
       type: 'task/inserted',
       listId,
-      onTaskInserted: (newTask) => setEditingTaskId(newTask.id),
+      onTaskInserted: (newTask) => {
+        setTimeout(() => setEditingTaskId(newTask.id), 0); // Avoid bad setState on rend
+      },
     });
 
   const deleteList = () => dispatch({ type: 'list/deleted', listId });
@@ -109,9 +134,36 @@ export const List = ({
   const renameList = () => {
     if (name !== list.name) {
       dispatch({ type: 'list/renamed', listId, name });
-      setEditingListId(null);
     }
+    setEditingListId(null);
   };
+
+  /*
+   * Hotkeys
+   */
+  useHotkeys('ctrl+left', moveListLeft, {
+    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+right', moveListRight, {
+    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+a', addTask, {
+    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+shift+backspace', deleteList, {
+    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
 
   // Set up draggable and drop target for list
   useEffect(() => {
@@ -182,7 +234,9 @@ export const List = ({
       data-testid={`list-${listId}`}
       className={clsx([
         // Basic layout
-        'relative -ml-0.5 flex max-h-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:w-80',
+        'relative -ml-0.5 flex max-h-full w-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:w-80',
+        // Active list
+        activeListId === listId ? '' : 'hidden lg:block',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&
@@ -266,6 +320,7 @@ export const List = ({
                   >
                     <ArrowLeftIcon />
                     <DropdownLabel>Move left</DropdownLabel>
+                    <DropdownShortcut keys="⌘←" />
                   </DropdownItem>
                   <DropdownItem
                     disabled={listIndex === boardLength - 1}
@@ -273,13 +328,19 @@ export const List = ({
                   >
                     <ArrowRightIcon />
                     <DropdownLabel>Move right</DropdownLabel>
+                    <DropdownShortcut keys="⌘→" />
                   </DropdownItem>
                 </DropdownSection>
                 <DropdownDivider />
+                <DropdownItem onClick={addTask}>
+                  <PlusIcon />
+                  <DropdownLabel>Add task</DropdownLabel>
+                  <DropdownShortcut keys="⌘A" />
+                </DropdownItem>
                 <DropdownItem onClick={deleteList}>
                   <TrashIcon />
                   <DropdownLabel>Delete list</DropdownLabel>
-                  <DropdownShortcut keys="⌘X" />
+                  <DropdownShortcut keys="⌘⇧⌫" />
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -318,6 +379,7 @@ export const List = ({
                   task={task}
                   index={index}
                   listId={listId}
+                  taskIds={taskIds}
                   ancestorIds={[]}
                   previousId={tasks[index - 1]?.id ?? null}
                   nextId={tasks[index + 1]?.id ?? null}

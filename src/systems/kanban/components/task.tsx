@@ -35,6 +35,7 @@ import {
   ArrowRightIcon,
   ArrowTurnDownRightIcon,
   ArrowUpIcon,
+  CheckIcon,
   EllipsisHorizontalIcon,
   ListBulletIcon,
   TrashIcon,
@@ -43,6 +44,7 @@ import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { useHotkeys } from 'react-hotkeys-hook';
 import invariant from 'tiny-invariant';
 
 import { findTask } from '../context';
@@ -67,6 +69,7 @@ export const Task = ({
   task,
   index,
   listId,
+  taskIds,
   ancestorIds,
   previousId,
   nextId,
@@ -77,6 +80,7 @@ export const Task = ({
   task: TaskType;
   index: number;
   listId: string;
+  taskIds: string[];
   ancestorIds: string[];
   previousId: string | null;
   nextId: string | null;
@@ -96,12 +100,25 @@ export const Task = ({
 
   const taskRef = useRef<HTMLLIElement>(null);
 
+  const [cursorAtStart, setCursorAtStart] = useState(false);
+  const [cursorAtEnd, setCursorAtEnd] = useState(false);
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
   const [text, setText] = useState<string>(task.text);
 
   const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
+
+  const flatIndex = taskIds.indexOf(taskId);
+  const flatPreviousId = flatIndex > 0 ? taskIds[flatIndex - 1] : null;
+  const flatNextId =
+    flatIndex < taskIds.length - 1 ? taskIds[flatIndex + 1] : null;
+
+  const handleSelectionChange = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    setCursorAtStart(input.selectionStart === 0);
+    setCursorAtEnd(input.selectionStart === input.value.length);
+  };
 
   /*
    * Indent actions
@@ -180,6 +197,7 @@ export const Task = ({
       type: 'task/moved',
       listId,
       taskId,
+      parentId: parentId ?? undefined,
       previousId: previousPreviousSibling?.id ?? undefined,
       destinationListId: listId,
     });
@@ -192,6 +210,7 @@ export const Task = ({
       type: 'task/moved',
       listId,
       taskId,
+      parentId: parentId ?? undefined,
       previousId: nextId,
       destinationListId: listId,
     });
@@ -234,24 +253,111 @@ export const Task = ({
    * Other actions
    */
 
+  const toggleTask = () => dispatch({ type: 'task/toggled', listId, taskId });
+
   const addSubtask = () =>
     dispatch({
       type: 'task/inserted',
       listId,
       parentId: taskId,
-      onTaskInserted: (newTask) => setEditingTaskId(newTask.id),
+      onTaskInserted: (newTask) => {
+        setTimeout(() => setEditingTaskId(newTask.id), 0); // Avoid bad setState on rend
+      },
     });
 
-  const deleteTask = () => dispatch({ type: 'task/deleted', listId, taskId });
+  const deleteTask = () => {
+    dispatch({ type: 'task/deleted', listId, taskId });
+    setEditingTaskId(nextId);
+  };
 
   const renameTask = () => {
     if (text !== task.text) {
       dispatch({ type: 'task/renamed', listId, taskId, text });
-      setEditingTaskId(null);
     }
+    setEditingTaskId(flatNextId);
   };
 
-  const toggleTask = () => dispatch({ type: 'task/toggled', listId, taskId });
+  /*
+   * Hotkeys
+   */
+
+  useHotkeys('home', () => setEditingTaskId(taskIds[0]), {
+    enabled: isEditing && cursorAtStart,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('up', () => setEditingTaskId(flatPreviousId), {
+    enabled: isEditing && cursorAtStart && flatPreviousId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('down', () => setEditingTaskId(flatNextId), {
+    enabled: isEditing && cursorAtEnd && flatNextId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('end', () => setEditingTaskId(taskIds[taskIds.length - 1]), {
+    enabled: isEditing && cursorAtEnd,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+]', indentTask, {
+    enabled: isEditing && !!previousId,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+[', unindentTask, {
+    enabled: isEditing && !!parentId,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+home', moveTaskToTop, {
+    enabled: isEditing && cursorAtStart,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+up', moveTaskUp, {
+    enabled: isEditing && cursorAtStart && previousId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+down', moveTaskDown, {
+    enabled: isEditing && cursorAtEnd && nextId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+end', moveTaskToBottom, {
+    enabled: isEditing && cursorAtEnd,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+space', toggleTask, {
+    enabled: isEditing,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+s', addSubtask, {
+    enabled: isEditing,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('ctrl+backspace', deleteTask, {
+    enabled: isEditing,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
 
   // Set up draggable and drop target for task
   useEffect(() => {
@@ -343,6 +449,9 @@ export const Task = ({
           !isCompleted && 'cursor-grab active:cursor-grabbing',
           // Hover state
           'hover:bg-zinc-950/5 dark:hover:bg-white/10',
+          // Editing state
+          isEditing && 'bg-zinc-950/5 dark:bg-white/10',
+          // Drop indicator
           dropState.type === 'is-task-over' &&
             dropState.instruction?.type === 'make-child' &&
             'bg-blue-500/10',
@@ -380,6 +489,8 @@ export const Task = ({
               onBlur={renameTask}
               onFocus={(e) => (e.target as HTMLInputElement).select()}
               onKeyDown={(e) => e.key === 'Enter' && renameTask()}
+              onKeyUp={handleSelectionChange}
+              onSelect={handleSelectionChange}
               className={clsx([
                 'block w-full bg-transparent outline-none',
                 'py-[calc(theme(spacing[2.5]))] sm:py-[calc(theme(spacing[1.5]))]',
@@ -419,10 +530,12 @@ export const Task = ({
                   <DropdownItem disabled={!previousId} onClick={indentTask}>
                     <ArrowRightIcon />
                     <DropdownLabel>Indent</DropdownLabel>
+                    <DropdownShortcut keys="⌘]" />
                   </DropdownItem>
                   <DropdownItem disabled={!parentId} onClick={unindentTask}>
                     <ArrowLeftIcon />
                     <DropdownLabel>Unindent</DropdownLabel>
+                    <DropdownShortcut keys="⌘[" />
                   </DropdownItem>
                 </DropdownSection>
                 <DropdownDivider />
@@ -434,14 +547,17 @@ export const Task = ({
                   >
                     <ArrowUpIcon />
                     <DropdownLabel>Move to top</DropdownLabel>
+                    <DropdownShortcut keys="⌘⇱" />
                   </DropdownItem>
                   <DropdownItem disabled={!previousId} onClick={moveTaskUp}>
                     <ArrowUpIcon />
                     <DropdownLabel>Move up</DropdownLabel>
+                    <DropdownShortcut keys="⌘↑" />
                   </DropdownItem>
                   <DropdownItem disabled={!nextId} onClick={moveTaskDown}>
                     <ArrowDownIcon />
                     <DropdownLabel>Move down</DropdownLabel>
+                    <DropdownShortcut keys="⌘↓" />
                   </DropdownItem>
                   <DropdownItem
                     disabled={currentLevel === 0 && !nextId}
@@ -449,13 +565,14 @@ export const Task = ({
                   >
                     <ArrowDownIcon />
                     <DropdownLabel>Move to bottom</DropdownLabel>
+                    <DropdownShortcut keys="⌘⇲" />
                   </DropdownItem>
                 </DropdownSection>
                 <DropdownDivider />
                 <DropdownSection aria-label="Move to">
                   <DropdownHeading>Move to</DropdownHeading>
                   {lists.map(
-                    (list) =>
+                    (list, listIndex) =>
                       list.id !== listId && (
                         <DropdownItem
                           key={list.id}
@@ -463,20 +580,26 @@ export const Task = ({
                         >
                           <ListBulletIcon />
                           <DropdownLabel>{list.name}</DropdownLabel>
+                          {/* <DropdownShortcut keys={`⌘${listIndex + 1}`} /> */}
                         </DropdownItem>
                       ),
                   )}
                 </DropdownSection>
                 <DropdownDivider />
+                <DropdownItem onClick={toggleTask}>
+                  <CheckIcon />
+                  <DropdownLabel>Toggle task</DropdownLabel>
+                  <DropdownShortcut keys="⌘␣" />
+                </DropdownItem>
                 <DropdownItem onClick={addSubtask}>
                   <ArrowTurnDownRightIcon />
                   <DropdownLabel>Add subtask</DropdownLabel>
-                  <DropdownShortcut keys="⌘X" />
+                  <DropdownShortcut keys="⌘S" />
                 </DropdownItem>
                 <DropdownItem onClick={deleteTask}>
                   <TrashIcon />
                   <DropdownLabel>Delete task</DropdownLabel>
-                  <DropdownShortcut keys="⌘X" />
+                  <DropdownShortcut keys="⌘⌫" />
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -499,6 +622,7 @@ export const Task = ({
           task={child}
           index={index}
           listId={listId}
+          taskIds={taskIds}
           ancestorIds={[...ancestorIds, task.id]}
           previousId={task.children[index - 1]?.id ?? null}
           nextId={task.children[index + 1]?.id ?? null}
