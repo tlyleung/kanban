@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI-Powered Kanban Board
 
-## Getting Started
+This project is a **AI-Powered Kanban Board** that leverages the **Anthropic API** to provide intelligent task decomposition and categorization.
 
-First, run the development server:
+<img src="/readme/screenshot.png" width="800" />
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
+- Interactive Kanban board for organizing tasks visually.
+- Automatically generate subtasks and distribute tasks across lists using AI.
+- Keyboard shortcuts for easy navigation and task management.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Demo
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can see the app [here](https://actamachina.com/kanban). Since the Anthropic Claude 3.5 Haiku API costs are approximately **0.4¢ per KTok**, you will need to supply your own API key.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Requirements
 
-## Learn More
+- Node.js
+- Anthropic API key (You can get one [here](https://docs.anthropic.com/en/api/getting-started))
 
-To learn more about Next.js, take a look at the following resources:
+## Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/tlyleung/kanban.git
+    cd kanban
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
-## Deploy on Vercel
+3. **Run the development server**:
+    ```bash
+    npm run dev
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Open the app**:
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Usage
+
+1. Enter your **Anthropic API Key** in the input field.
+2. Interact with the Kanban board as you would with a normal Kanban board.
+
+## Cost Notice
+
+Be aware that using the Anthropic Claude 3.5 Haiku API incurs costs at approximately **0.4¢ per KTok**. You will need your own API key to use this app.
+
+## Contributing
+
+Contributions are welcome! Please feel free to open issues or submit pull requests.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 License. See the [LICENSE](LICENSE) file for more details.
+
+## Acknowledgements
+
+This project was built using the following tools and libraries:
+
+- [Pragmatic Drag and Drop](https://github.com/atlassian/pragmatic-drag-and-drop)
+- [React Hotkeys Hook](https://github.com/JohannesKlauss/react-hotkeys-hook)
+- [Tailwind Catalyst](https://catalyst.tailwindui.com/)
+- [Vercel AI SDK](https://github.com/vercel/ai)
