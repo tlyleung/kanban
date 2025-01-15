@@ -84,7 +84,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
               <SidebarSection>
                 <SidebarHeading>Overview</SidebarHeading>
                 <Text className="px-2">
-                  AI-powered kanban board that helps you generate subtasks and
+                  AI-powered Kanban Board that helps you generate subtasks and
                   distribute tasks across lists.
                 </Text>
               </SidebarSection>
