@@ -11,6 +11,7 @@ import {
   DropdownSection,
   DropdownShortcut,
 } from '@/components/catalyst/dropdown';
+import { useApiKey } from '@/contexts/api-key';
 import { useKanbanDispatch, useKanbanHistory } from '@/systems/kanban/context';
 import {
   TaskData as TaskDataType,
@@ -38,6 +39,7 @@ import {
   CheckIcon,
   EllipsisHorizontalIcon,
   ListBulletIcon,
+  SparklesIcon,
   TrashIcon,
 } from '@heroicons/react/16/solid';
 import clsx from 'clsx';
@@ -111,8 +113,10 @@ export const Task = ({
 
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
+  const [isGenerating, setIsGenerating] = useState(false);
   const [text, setText] = useState<string>(task.text);
 
+  const { apiKey, setApiKeyError } = useApiKey();
   const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
 
@@ -130,6 +134,26 @@ export const Task = ({
     } else {
       setSelection(null);
     }
+  };
+
+  /*
+   * AI actions
+   */
+
+  const generateSubtasks = async () => {
+    if (!apiKey) {
+      setApiKeyError(true);
+      return;
+    }
+
+    setIsGenerating(true);
+    const response = await fetch('/api/tasks/generate', {
+      method: 'POST',
+      body: JSON.stringify({ taskText: task.text, apiKey }),
+    });
+    const texts = await response.json();
+    dispatch({ type: 'task/generated', listId, parentId: taskId, texts });
+    setIsGenerating(false);
   };
 
   /*
@@ -379,6 +403,7 @@ export const Task = ({
 
   useHotkeys('ctrl+space', toggleTask, {
     enabled: isActive,
+    enableOnFormTags: true,
     preventDefault: true,
   });
 
@@ -390,6 +415,13 @@ export const Task = ({
 
   useHotkeys('ctrl+backspace,ctrl+delete', deleteTask, {
     enabled: isActive,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('tab', generateSubtasks, {
+    enabled: isActive,
+    enableOnFormTags: true,
     preventDefault: true,
   });
 
@@ -490,10 +522,12 @@ export const Task = ({
         className={clsx([
           'relative -mt-0.5',
           !isCompleted && 'cursor-grab active:cursor-grabbing',
-          // Hover state
-          'hover:bg-zinc-950/5 dark:hover:bg-white/10',
           // Active state
           isActive && 'bg-zinc-950/5 dark:bg-white/10',
+          // Generating state
+          isGenerating && 'animate-pulse',
+          // Hover state
+          'hover:bg-zinc-950/5 dark:hover:bg-white/10',
           // Drop indicator
           dropState.type === 'is-task-over' &&
             dropState.instruction?.type === 'make-child' &&
@@ -581,6 +615,16 @@ export const Task = ({
                 anchor="bottom end"
                 data-testid={`more-options-menu-${taskId}`}
               >
+                <DropdownSection aria-label="AI">
+                  <DropdownHeading>AI</DropdownHeading>
+                  <DropdownItem onClick={generateSubtasks}>
+                    <SparklesIcon />
+                    <DropdownLabel>Generate subtasks</DropdownLabel>
+                    <DropdownShortcut keys="⌘⇥" />
+                  </DropdownItem>
+                </DropdownSection>
+                <DropdownDivider />
+
                 <DropdownSection aria-label="Reorder">
                   <DropdownHeading>Indent</DropdownHeading>
                   <DropdownItem disabled={!previousId} onClick={indentTask}>

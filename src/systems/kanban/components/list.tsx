@@ -9,7 +9,8 @@ import {
   DropdownSection,
   DropdownShortcut,
 } from '@/components/catalyst/dropdown';
-import { useKanbanDispatch } from '@/systems/kanban/context';
+import { useApiKey } from '@/contexts/api-key';
+import { useKanbanDispatch, useKanbanHistory } from '@/systems/kanban/context';
 import {
   ListData as ListDataType,
   List as ListType,
@@ -32,6 +33,7 @@ import {
   ArrowRightIcon,
   EllipsisHorizontalIcon,
   PlusIcon,
+  SparklesIcon,
   TrashIcon,
 } from '@heroicons/react/16/solid';
 import clsx from 'clsx';
@@ -79,6 +81,7 @@ export const List = ({
 }) => {
   const listId = list.id;
 
+  const isActive = listId === activeListId;
   const isEditing = listId === activeListId && isEditingList;
 
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -88,8 +91,11 @@ export const List = ({
 
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
+  const [isGenerating, setIsGenerating] = useState(false);
   const [name, setName] = useState<string>(list.name);
 
+  const { apiKey, setApiKeyError } = useApiKey();
+  const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
 
   const taskIds = (() => {
@@ -107,6 +113,51 @@ export const List = ({
     const completedTaskIds = flattenTasks(list.completedTasks);
     return [...uncompletedTaskIds, ...completedTaskIds];
   })();
+
+  /*
+   * AI actions
+   */
+
+  const distributeTasks = async () => {
+    if (!apiKey) {
+      setApiKeyError(true);
+      return;
+    }
+
+    setIsGenerating(true);
+
+    const listIds = lists.map((list) => list.id);
+    const listNames = lists.map((list) => list.name);
+    const taskIds = list.uncompletedTasks.map((task) => task.id); // top-level tasks only
+    const taskTexts = list.uncompletedTasks.map((task) => task.text); // top-level tasks only
+
+    try {
+      // Call the tasks/categorize API for each task
+      const destinationListIds = await Promise.all(
+        taskTexts.map(async (taskText) => {
+          const response = await fetch('/api/tasks/categorize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ listNames, taskText, apiKey }),
+          });
+          const destinationListName = await response.json();
+          const index = listNames.indexOf(destinationListName);
+          return index !== -1 ? listIds[index] : listId; // Default to current list if no match
+        }),
+      );
+
+      dispatch({
+        type: 'list/distributed',
+        listId,
+        taskIds,
+        destinationListIds,
+      });
+    } catch (error) {
+      console.error('Error distributing tasks:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   /*
    * Reorder actions
@@ -147,6 +198,12 @@ export const List = ({
   /*
    * Hotkeys
    */
+
+  useHotkeys('ctrl+tab', distributeTasks, {
+    enabled: isActive,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
 
   useHotkeys('enter', () => setIsEditingList(false), {
     enabled: isEditing,
@@ -259,6 +316,8 @@ export const List = ({
         'relative max-h-full w-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:-ml-0.5 lg:w-80',
         // Active list
         activeListId === listId ? 'flex' : 'hidden lg:flex',
+        // Generating state
+        isGenerating && 'animate-pulse',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&
@@ -338,6 +397,16 @@ export const List = ({
                 anchor="bottom end"
                 data-testid={`more-options-menu-${listId}`}
               >
+                <DropdownSection aria-label="AI">
+                  <DropdownHeading>AI</DropdownHeading>
+                  <DropdownItem onClick={distributeTasks}>
+                    <SparklesIcon />
+                    <DropdownLabel>Distribute tasks</DropdownLabel>
+                    <DropdownShortcut keys="⌘⇥" />
+                  </DropdownItem>
+                </DropdownSection>
+                <DropdownDivider />
+
                 <DropdownSection aria-label="Reorder">
                   <DropdownHeading>Reorder</DropdownHeading>
                   <DropdownItem

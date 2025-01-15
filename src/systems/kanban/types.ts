@@ -3,10 +3,22 @@ export type Action =
   | { type: 'board/redo' }
   | { type: 'list/cleared'; listId: string }
   | { type: 'list/deleted'; listId: string }
+  | {
+      type: 'list/distributed';
+      listId: string;
+      taskIds: string[];
+      destinationListIds: string[];
+    }
   | { type: 'list/inserted'; onListInserted?: (list: List) => void }
   | { type: 'list/moved'; startIndex: number; endIndex: number }
   | { type: 'list/renamed'; listId: string; name: string }
   | { type: 'task/deleted'; listId: string; taskId: string }
+  | {
+      type: 'task/generated';
+      listId: string;
+      parentId: string;
+      texts: string[];
+    }
   | {
       type: 'task/inserted';
       listId: string;

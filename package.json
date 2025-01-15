@@ -11,11 +11,13 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.0.7",
     "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^2.1.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
     "@headlessui/react": "^2.1.8",
     "@heroicons/react": "^2.1.5",
+    "ai": "^4.0.28",
     "clsx": "^2.1.1",
     "framer-motion": "^11.5.6",
     "immer": "^10.1.1",

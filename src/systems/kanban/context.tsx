@@ -109,6 +109,35 @@ function boardReducer(board: Board, action: Action): Board {
         return lists.filter((list) => list.id !== listId);
       }
 
+      case 'list/distributed': {
+        const { listId, taskIds, destinationListIds } = action;
+        const list = lists.find((list) => list.id === listId);
+        invariant(list, 'List not found');
+
+        // Reverse order zipping of taskIds and destinationListIds
+        for (let i = taskIds.length - 1; i >= 0; i--) {
+          const taskId = taskIds[i];
+          const destinationListId = destinationListIds[i];
+
+          if (destinationListId === listId) continue; // Skip tasks staying in the current list
+
+          // Find and delete the task from the source list
+          const task = deleteTask(list.uncompletedTasks, taskId);
+          invariant(task, 'Task not found');
+
+          // Find the destination list
+          const destinationList = lists.find(
+            (list) => list.id === destinationListId,
+          );
+          invariant(destinationList, 'Destination list not found');
+
+          // Add the task to the beginning of the destination list's uncompleted tasks
+          destinationList.uncompletedTasks.splice(0, 0, task);
+        }
+
+        break;
+      }
+
       case 'list/inserted': {
         const { onListInserted } = action;
 
@@ -145,6 +174,30 @@ function boardReducer(board: Board, action: Action): Board {
         invariant(list, 'List not found');
         deleteTask(list.uncompletedTasks, taskId);
         deleteTask(list.completedTasks, taskId);
+        break;
+      }
+
+      case 'task/generated': {
+        const { listId, parentId, texts } = action;
+        const list = lists.find((list) => list.id === listId);
+        invariant(list, 'List not found');
+
+        const newSubtasks = texts.map((text) => ({
+          id: crypto.randomUUID(),
+          text,
+          parentId: parentId ?? null,
+          children: [],
+        }));
+
+        let tasks = list.uncompletedTasks;
+        if (parentId) {
+          const parent = findTask(list.uncompletedTasks, parentId);
+          invariant(parent, 'Parent not found');
+          tasks = parent.children;
+        }
+
+        tasks.push(...newSubtasks);
+
         break;
       }
 
