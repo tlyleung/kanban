@@ -57,7 +57,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <ArrowUturnLeftIcon20 />
               </NavbarItem>
               <NavbarItem
-                href="https://github.com/tlyleung/technical-phone-screen"
+                href="https://github.com/tlyleung/kanban"
                 aria-label="GitHub Repository"
               >
                 <GitHubIcon />
@@ -126,7 +126,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                   <SidebarLabel>Back to Demos</SidebarLabel>
                 </SidebarItem>
                 <SidebarItem
-                  href="https://github.com/tlyleung/technical-phone-screen"
+                  href="https://github.com/tlyleung/kanban"
                   aria-label="GitHub Repository"
                 >
                   <GitHubIcon />
