@@ -51,11 +51,6 @@ function AccountDropdownMenu({
       </DropdownItem>
       <DropdownDivider />
       <DropdownItem href="#">
-        <LightBulbIcon />
-        <DropdownLabel>Share feedback</DropdownLabel>
-      </DropdownItem>
-      <DropdownDivider />
-      <DropdownItem href="#">
         <ArrowRightStartOnRectangleIcon />
         <DropdownLabel>Sign out</DropdownLabel>
       </DropdownItem>
@@ -136,7 +131,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
               </SidebarItem>
               <SidebarItem disabled current>
                 <ViewColumnsIcon20 />
-                <SidebarLabel>Board 1</SidebarLabel>
+                <SidebarLabel>Default Board</SidebarLabel>
               </SidebarItem>
             </SidebarSection>
             <SidebarSection className="lists-portals"></SidebarSection>

@@ -114,7 +114,7 @@ function boardReducer(board: Board, action: Action): Board {
 
         const newList = {
           id: crypto.randomUUID(),
-          name: 'New list',
+          name: '',
           uncompletedTasks: [],
           completedTasks: [],
         };
@@ -155,7 +155,7 @@ function boardReducer(board: Board, action: Action): Board {
 
         const newTask = {
           id: crypto.randomUUID(),
-          text: 'New task',
+          text: '',
           parentId: parentId ?? null,
           children: [],
         };

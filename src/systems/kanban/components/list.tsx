@@ -53,25 +53,33 @@ export const List = ({
   listIndex,
   boardLength,
   activeListId,
-  editingListId,
-  setEditingListId,
-  editingTaskId,
-  setEditingTaskId,
+  setActiveListId,
+  isEditingList,
+  setIsEditingList,
+  activeTaskId,
+  setActiveTaskId,
+  isEditingTask,
+  setIsEditingTask,
+  selection,
+  setSelection,
 }: {
   list: ListType;
   listIndex: number;
   boardLength: number;
   activeListId: string | null;
-  editingListId: string | null;
-  setEditingListId: (listId: string | null) => void;
-  editingTaskId: string | null;
-  setEditingTaskId: (taskId: string | null) => void;
+  setActiveListId: (listId: string | null) => void;
+  isEditingList: boolean;
+  setIsEditingList: (isEditing: boolean) => void;
+  activeTaskId: string | null;
+  setActiveTaskId: (taskId: string | null) => void;
+  isEditingTask: boolean;
+  setIsEditingTask: (isEditing: boolean) => void;
+  selection: 'start' | 'end' | null;
+  setSelection: (selection: 'start' | 'end' | null) => void;
 }) => {
-  const dispatch = useKanbanDispatch();
-
   const listId = list.id;
 
-  const isEditing = editingListId === listId;
+  const isEditing = listId === activeListId && isEditingList;
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const listInnerRef = useRef<HTMLDivElement | null>(null);
@@ -81,6 +89,8 @@ export const List = ({
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
   const [name, setName] = useState<string>(list.name);
+
+  const dispatch = useKanbanDispatch();
 
   const taskIds = (() => {
     function flattenTasks(tasks: TaskType[]): string[] {
@@ -125,45 +135,57 @@ export const List = ({
       type: 'task/inserted',
       listId,
       onTaskInserted: (newTask) => {
-        setTimeout(() => setEditingTaskId(newTask.id), 0); // Avoid bad setState on rend
+        setTimeout(() => {
+          setActiveTaskId(newTask.id);
+          setIsEditingTask(true);
+        }, 0); // Avoid bad setState on rend
       },
     });
 
   const deleteList = () => dispatch({ type: 'list/deleted', listId });
 
-  const renameList = () => {
-    if (name !== list.name) {
-      dispatch({ type: 'list/renamed', listId, name });
-    }
-    setEditingListId(null);
-  };
-
   /*
    * Hotkeys
    */
+
+  useHotkeys('enter', () => setIsEditingList(false), {
+    enabled: isEditing,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
   useHotkeys('ctrl+left', moveListLeft, {
-    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enabled: activeTaskId ? taskIds.includes(activeTaskId) : false,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+right', moveListRight, {
-    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enabled: activeTaskId ? taskIds.includes(activeTaskId) : false,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+a', addTask, {
-    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enabled: activeTaskId ? taskIds.includes(activeTaskId) : false,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+shift+backspace', deleteList, {
-    enabled: editingTaskId ? taskIds.includes(editingTaskId) : false,
+    enabled: activeTaskId ? taskIds.includes(activeTaskId) : false,
     enableOnFormTags: true,
     preventDefault: true,
   });
+
+  // Rename list when editing stops
+  useEffect(() => {
+    if (!isEditing) {
+      if (name !== list.name) {
+        dispatch({ type: 'list/renamed', listId, name });
+      }
+    }
+  }, [isEditing, dispatch, listId, name, list.name]);
 
   // Set up draggable and drop target for list
   useEffect(() => {
@@ -172,7 +194,7 @@ export const List = ({
     invariant(headerRef.current);
     invariant(scrollableRef.current);
 
-    if (isEditing) return;
+    if (isEditing || isEditingTask) return;
 
     const data: ListDataType = { type: 'list', listId, listIndex };
 
@@ -226,7 +248,7 @@ export const List = ({
         onDrop: () => setDropState({ type: 'idle' }),
       }),
     );
-  }, [listId, listIndex, isEditing]);
+  }, [listId, listIndex, isEditing, isEditingTask]);
 
   return (
     <div
@@ -234,9 +256,9 @@ export const List = ({
       data-testid={`list-${listId}`}
       className={clsx([
         // Basic layout
-        'relative -ml-0.5 flex max-h-full w-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:w-80',
+        'relative max-h-full w-full flex-shrink-0 flex-col overflow-y-hidden px-4 lg:-ml-0.5 lg:w-80',
         // Active list
-        activeListId === listId ? '' : 'hidden lg:block',
+        activeListId === listId ? 'flex' : 'hidden lg:flex',
         // Drop indicator
         'border-l-2 border-r-2 border-transparent',
         dropState.type === 'is-list-over' &&
@@ -284,20 +306,24 @@ export const List = ({
                 autoFocus
                 type="text"
                 value={name}
-                placeholder="List name"
+                placeholder="List"
                 onChange={(e) => setName(e.target.value)}
-                onBlur={renameList}
+                onBlur={() => setIsEditingList(false)}
                 onFocus={(e) => (e.target as HTMLInputElement).select()}
-                onKeyDown={(e) => e.key === 'Enter' && renameList()}
                 className="flex-1 bg-transparent font-semibold leading-8 outline-none"
               />
             ) : (
               <h1
                 data-testid="list-name"
                 className="flex-1 truncate font-semibold leading-8"
-                onClick={() => setEditingListId(listId)}
+                onClick={() => {
+                  setActiveListId(listId);
+                  setIsEditingList(true);
+                  setActiveTaskId(null);
+                  setIsEditingTask(false);
+                }}
               >
-                {list.name}
+                {name}
               </h1>
             )}
             <Dropdown>
@@ -312,7 +338,7 @@ export const List = ({
                 anchor="bottom end"
                 data-testid={`more-options-menu-${listId}`}
               >
-                <DropdownSection>
+                <DropdownSection aria-label="Reorder">
                   <DropdownHeading>Reorder</DropdownHeading>
                   <DropdownItem
                     disabled={listIndex === 0}
@@ -332,16 +358,19 @@ export const List = ({
                   </DropdownItem>
                 </DropdownSection>
                 <DropdownDivider />
-                <DropdownItem onClick={addTask}>
-                  <PlusIcon />
-                  <DropdownLabel>Add task</DropdownLabel>
-                  <DropdownShortcut keys="⌘A" />
-                </DropdownItem>
-                <DropdownItem onClick={deleteList}>
-                  <TrashIcon />
-                  <DropdownLabel>Delete list</DropdownLabel>
-                  <DropdownShortcut keys="⌘⇧⌫" />
-                </DropdownItem>
+                <DropdownSection aria-label="Actions">
+                  <DropdownHeading>Actions</DropdownHeading>
+                  <DropdownItem onClick={addTask}>
+                    <PlusIcon />
+                    <DropdownLabel>Add task</DropdownLabel>
+                    <DropdownShortcut keys="⌘A" />
+                  </DropdownItem>
+                  <DropdownItem onClick={deleteList}>
+                    <TrashIcon />
+                    <DropdownLabel>Delete list</DropdownLabel>
+                    <DropdownShortcut keys="⌘⇧⌫" />
+                  </DropdownItem>
+                </DropdownSection>
               </DropdownMenu>
             </Dropdown>
           </header>
@@ -384,8 +413,12 @@ export const List = ({
                   previousId={tasks[index - 1]?.id ?? null}
                   nextId={tasks[index + 1]?.id ?? null}
                   isCompleted={isCompleted}
-                  editingTaskId={editingTaskId}
-                  setEditingTaskId={setEditingTaskId}
+                  activeTaskId={activeTaskId}
+                  setActiveTaskId={setActiveTaskId}
+                  isEditingTask={isEditingTask}
+                  setIsEditingTask={setIsEditingTask}
+                  selection={selection}
+                  setSelection={setSelection}
                 />
               )),
             )}

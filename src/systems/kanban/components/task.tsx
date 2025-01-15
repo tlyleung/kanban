@@ -74,8 +74,12 @@ export const Task = ({
   previousId,
   nextId,
   isCompleted,
-  editingTaskId,
-  setEditingTaskId,
+  activeTaskId,
+  setActiveTaskId,
+  isEditingTask,
+  setIsEditingTask,
+  selection,
+  setSelection,
 }: {
   task: TaskType;
   index: number;
@@ -85,12 +89,17 @@ export const Task = ({
   previousId: string | null;
   nextId: string | null;
   isCompleted: boolean;
-  editingTaskId: string | null;
-  setEditingTaskId: (taskId: string | null) => void;
+  activeTaskId: string | null;
+  setActiveTaskId: (taskId: string | null) => void;
+  isEditingTask: boolean;
+  setIsEditingTask: (isEditing: boolean) => void;
+  selection: 'start' | 'end' | null;
+  setSelection: (selection: 'start' | 'end' | null) => void;
 }) => {
   const taskId = task.id;
 
-  const isEditing = editingTaskId === taskId;
+  const isActive = taskId === activeTaskId;
+  const isEditing = taskId === activeTaskId && isEditingTask;
   const currentLevel = ancestorIds.length;
   const grandparentId =
     ancestorIds.length > 1 ? ancestorIds[ancestorIds.length - 2] : null;
@@ -100,8 +109,6 @@ export const Task = ({
 
   const taskRef = useRef<HTMLLIElement>(null);
 
-  const [cursorAtStart, setCursorAtStart] = useState(false);
-  const [cursorAtEnd, setCursorAtEnd] = useState(false);
   const [dragState, setDragState] = useState<DragState>({ type: 'idle' });
   const [dropState, setDropState] = useState<DropState>({ type: 'idle' });
   const [text, setText] = useState<string>(task.text);
@@ -115,9 +122,14 @@ export const Task = ({
     flatIndex < taskIds.length - 1 ? taskIds[flatIndex + 1] : null;
 
   const handleSelectionChange = (e: React.SyntheticEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    setCursorAtStart(input.selectionStart === 0);
-    setCursorAtEnd(input.selectionStart === input.value.length);
+    const { selectionStart, selectionEnd, value } = e.currentTarget;
+    if (selectionStart === value.length && selectionEnd === value.length) {
+      setSelection('end');
+    } else if (selectionStart === 0 && selectionEnd === 0) {
+      setSelection('start');
+    } else {
+      setSelection(null);
+    }
   };
 
   /*
@@ -261,103 +273,134 @@ export const Task = ({
       listId,
       parentId: taskId,
       onTaskInserted: (newTask) => {
-        setTimeout(() => setEditingTaskId(newTask.id), 0); // Avoid bad setState on rend
+        setTimeout(() => {
+          setActiveTaskId(newTask.id);
+          setIsEditingTask(true);
+        }, 0); // Avoid bad setState on rend
       },
     });
 
   const deleteTask = () => {
     dispatch({ type: 'task/deleted', listId, taskId });
-    setEditingTaskId(nextId);
-  };
-
-  const renameTask = () => {
-    if (text !== task.text) {
-      dispatch({ type: 'task/renamed', listId, taskId, text });
-    }
-    setEditingTaskId(flatNextId);
+    setActiveTaskId(nextId);
   };
 
   /*
    * Hotkeys
    */
 
-  useHotkeys('home', () => setEditingTaskId(taskIds[0]), {
-    enabled: isEditing && cursorAtStart,
+  useHotkeys('escape', () => setIsEditingTask(false), {
+    enabled: isEditing,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
-  useHotkeys('up', () => setEditingTaskId(flatPreviousId), {
-    enabled: isEditing && cursorAtStart && flatPreviousId !== null,
+  useHotkeys(
+    'enter',
+    () => {
+      setSelection(null);
+      setIsEditingTask(true);
+    },
+    {
+      enabled: isActive && !isEditing,
+      preventDefault: true,
+    },
+  );
+
+  useHotkeys('enter', () => setIsEditingTask(false), {
+    enabled: isEditing,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
-  useHotkeys('down', () => setEditingTaskId(flatNextId), {
-    enabled: isEditing && cursorAtEnd && flatNextId !== null,
+  useHotkeys('home', () => setActiveTaskId(taskIds[0]), {
+    enabled: isActive,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
-  useHotkeys('end', () => setEditingTaskId(taskIds[taskIds.length - 1]), {
-    enabled: isEditing && cursorAtEnd,
+  useHotkeys('up', () => setActiveTaskId(flatPreviousId), {
+    enabled:
+      isActive &&
+      (!isEditing || selection === 'start') &&
+      flatPreviousId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('down', () => setActiveTaskId(flatNextId), {
+    enabled:
+      isActive && (!isEditing || selection === 'end') && flatNextId !== null,
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  useHotkeys('end', () => setActiveTaskId(taskIds[taskIds.length - 1]), {
+    enabled: isActive,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+]', indentTask, {
-    enabled: isEditing && !!previousId,
+    enabled: isActive && !!previousId,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+[', unindentTask, {
-    enabled: isEditing && !!parentId,
+    enabled: isActive && !!parentId,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+home', moveTaskToTop, {
-    enabled: isEditing && cursorAtStart,
+    enabled: isActive,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+up', moveTaskUp, {
-    enabled: isEditing && cursorAtStart && previousId !== null,
+    enabled: isActive && previousId !== null,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+down', moveTaskDown, {
-    enabled: isEditing && cursorAtEnd && nextId !== null,
+    enabled: isActive && nextId !== null,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+end', moveTaskToBottom, {
-    enabled: isEditing && cursorAtEnd,
+    enabled: isActive,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+space', toggleTask, {
-    enabled: isEditing,
-    enableOnFormTags: true,
+    enabled: isActive,
     preventDefault: true,
   });
 
   useHotkeys('ctrl+s', addSubtask, {
-    enabled: isEditing,
+    enabled: isActive,
     enableOnFormTags: true,
     preventDefault: true,
   });
 
-  useHotkeys('ctrl+backspace', deleteTask, {
-    enabled: isEditing,
-    enableOnFormTags: true,
+  useHotkeys('ctrl+backspace,ctrl+delete', deleteTask, {
+    enabled: isActive,
     preventDefault: true,
   });
+
+  // Rename task when editing stops
+  useEffect(() => {
+    if (!isEditing) {
+      if (text !== task.text) {
+        dispatch({ type: 'task/renamed', listId, taskId, text });
+      }
+    }
+  }, [isEditing, dispatch, listId, taskId, text, task.text]);
 
   // Set up draggable and drop target for task
   useEffect(() => {
@@ -449,8 +492,8 @@ export const Task = ({
           !isCompleted && 'cursor-grab active:cursor-grabbing',
           // Hover state
           'hover:bg-zinc-950/5 dark:hover:bg-white/10',
-          // Editing state
-          isEditing && 'bg-zinc-950/5 dark:bg-white/10',
+          // Active state
+          isActive && 'bg-zinc-950/5 dark:bg-white/10',
           // Drop indicator
           dropState.type === 'is-task-over' &&
             dropState.instruction?.type === 'make-child' &&
@@ -480,16 +523,29 @@ export const Task = ({
           <Checkbox checked={isCompleted} onChange={toggleTask} />
           {isEditing ? (
             <Input
-              data-testid="task-input"
               autoFocus
-              type="text"
+              data-testid="task-input"
+              role="textbox"
               value={text}
-              placeholder="Task name"
+              placeholder="Task"
+              onBlur={() => setIsEditingTask(false)}
               onChange={(e) => setText(e.target.value)}
-              onBlur={renameTask}
-              onFocus={(e) => (e.target as HTMLInputElement).select()}
-              onKeyDown={(e) => e.key === 'Enter' && renameTask()}
-              onKeyUp={handleSelectionChange}
+              onFocus={(e) => {
+                switch (selection) {
+                  case 'end':
+                    e.target.setSelectionRange(
+                      e.target.value.length,
+                      e.target.value.length,
+                    );
+                    break;
+                  case 'start':
+                    e.target.setSelectionRange(0, 0);
+                    break;
+                  default:
+                    e.target.select();
+                    break;
+                }
+              }}
               onSelect={handleSelectionChange}
               className={clsx([
                 'block w-full bg-transparent outline-none',
@@ -503,13 +559,13 @@ export const Task = ({
                 'block w-full truncate',
                 'py-[calc(theme(spacing[2.5]))] sm:py-[calc(theme(spacing[1.5]))]',
               ])}
-              onClick={() => setEditingTaskId(taskId)}
+              onClick={() => {
+                setSelection(null);
+                setActiveTaskId(taskId);
+                setIsEditingTask(true);
+              }}
             >
-              {isCompleted ? (
-                <s>{task.text || '\u00A0'}</s>
-              ) : (
-                task.text || '\u00A0'
-              )}
+              {isCompleted ? <s>{text || '\u00A0'}</s> : text || '\u00A0'}
             </div>
           )}
           {!isCompleted && (
@@ -586,21 +642,24 @@ export const Task = ({
                   )}
                 </DropdownSection>
                 <DropdownDivider />
-                <DropdownItem onClick={toggleTask}>
-                  <CheckIcon />
-                  <DropdownLabel>Toggle task</DropdownLabel>
-                  <DropdownShortcut keys="⌘␣" />
-                </DropdownItem>
-                <DropdownItem onClick={addSubtask}>
-                  <ArrowTurnDownRightIcon />
-                  <DropdownLabel>Add subtask</DropdownLabel>
-                  <DropdownShortcut keys="⌘S" />
-                </DropdownItem>
-                <DropdownItem onClick={deleteTask}>
-                  <TrashIcon />
-                  <DropdownLabel>Delete task</DropdownLabel>
-                  <DropdownShortcut keys="⌘⌫" />
-                </DropdownItem>
+                <DropdownSection aria-label="Actions">
+                  <DropdownHeading>Actions</DropdownHeading>
+                  <DropdownItem onClick={toggleTask}>
+                    <CheckIcon />
+                    <DropdownLabel>Toggle task</DropdownLabel>
+                    <DropdownShortcut keys="⌘␣" />
+                  </DropdownItem>
+                  <DropdownItem onClick={addSubtask}>
+                    <ArrowTurnDownRightIcon />
+                    <DropdownLabel>Add subtask</DropdownLabel>
+                    <DropdownShortcut keys="⌘S" />
+                  </DropdownItem>
+                  <DropdownItem onClick={deleteTask}>
+                    <TrashIcon />
+                    <DropdownLabel>Delete task</DropdownLabel>
+                    <DropdownShortcut keys="⌘⌫" />
+                  </DropdownItem>
+                </DropdownSection>
               </DropdownMenu>
             </Dropdown>
           )}
@@ -627,8 +686,12 @@ export const Task = ({
           previousId={task.children[index - 1]?.id ?? null}
           nextId={task.children[index + 1]?.id ?? null}
           isCompleted={isCompleted}
-          editingTaskId={editingTaskId}
-          setEditingTaskId={setEditingTaskId}
+          activeTaskId={activeTaskId}
+          setActiveTaskId={setActiveTaskId}
+          isEditingTask={isEditingTask}
+          setIsEditingTask={setIsEditingTask}
+          selection={selection}
+          setSelection={setSelection}
         />
       ))}
     </>

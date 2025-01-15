@@ -23,9 +23,11 @@ export const Board = () => {
   const { present: lists } = useKanbanHistory();
   const dispatch = useKanbanDispatch();
 
-  const [activeListId, setActiveListId] = useState<string>(lists[0].id);
-  const [editingListId, setEditingListId] = useState<string | null>(null);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [activeListId, setActiveListId] = useState<string | null>(lists[0].id);
+  const [isEditingList, setIsEditingList] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [isEditingTask, setIsEditingTask] = useState(false);
+  const [selection, setSelection] = useState<'start' | 'end' | null>(null);
 
   const handleListDrop = useCallback(
     ({
@@ -206,11 +208,12 @@ export const Board = () => {
         index={1}
         activeListId={activeListId}
         setActiveListId={setActiveListId}
-        setEditingListId={setEditingListId}
+        setIsEditingList={setIsEditingList}
       />
       <ShortcutsPortal
         elementId="shortcuts-portal"
-        setEditingListId={setEditingListId}
+        setActiveListId={setActiveListId}
+        setIsEditingList={setIsEditingList}
       />
       <div
         ref={scrollableRef}
@@ -225,10 +228,15 @@ export const Board = () => {
             listIndex={listIndex}
             boardLength={lists.length}
             activeListId={activeListId}
-            editingListId={editingListId}
-            setEditingListId={setEditingListId}
-            editingTaskId={editingTaskId}
-            setEditingTaskId={setEditingTaskId}
+            setActiveListId={setActiveListId}
+            isEditingList={isEditingList}
+            setIsEditingList={setIsEditingList}
+            activeTaskId={activeTaskId}
+            setActiveTaskId={setActiveTaskId}
+            isEditingTask={isEditingTask}
+            setIsEditingTask={setIsEditingTask}
+            selection={selection}
+            setSelection={setSelection}
           />
         ))}
       </div>

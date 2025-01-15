@@ -182,7 +182,7 @@ describe('KanbanProvider', () => {
 
     const { present: lists } = getHistory();
     expect(lists).toHaveLength(3);
-    expect(lists[2].name).toBe('New list');
+    expect(lists[2].name).toBe('');
   });
 
   it('should move a list', () => {
@@ -229,7 +229,7 @@ describe('KanbanProvider', () => {
 
     const { present: lists } = getHistory();
     expect(lists[0].uncompletedTasks).toHaveLength(3);
-    expect(lists[0].uncompletedTasks[0].text).toBe('New task');
+    expect(lists[0].uncompletedTasks[0].text).toBe('');
   });
 
   it('should insert a new subtask', () => {
@@ -243,7 +243,7 @@ describe('KanbanProvider', () => {
     );
     expect(parentTask).toBeDefined();
     expect(parentTask!.children).toHaveLength(1);
-    expect(parentTask!.children[0].text).toBe('New task');
+    expect(parentTask!.children[0].text).toBe('');
   });
 
   it('should move a task within a list', () => {

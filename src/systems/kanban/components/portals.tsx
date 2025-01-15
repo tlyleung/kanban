@@ -52,8 +52,8 @@ const SidebarListItem = ({
 }: {
   list: ListType;
   listIndex: number;
-  activeListId: string;
-  setActiveListId: (listId: string) => void;
+  activeListId: string | null;
+  setActiveListId: (listId: string | null) => void;
 }) => {
   const listId = list.id;
 
@@ -137,13 +137,13 @@ export function ListsPortal({
   index,
   activeListId,
   setActiveListId,
-  setEditingListId,
+  setIsEditingList,
 }: {
   className: string;
   index: number;
-  activeListId: string;
-  setActiveListId: (listId: string) => void;
-  setEditingListId: (listId: string | null) => void;
+  activeListId: string | null;
+  setActiveListId: (listId: string | null) => void;
+  setIsEditingList: (isEditing: boolean) => void;
 }) {
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
 
@@ -155,8 +155,8 @@ export function ListsPortal({
       type: 'list/inserted',
       onListInserted: (list) => {
         setTimeout(() => {
-          setEditingListId(list.id);
           setActiveListId(list.id);
+          setIsEditingList(true);
         }, 0); // Avoid bad setState on render
       },
     });
@@ -257,10 +257,12 @@ export function ListsPortal({
 
 export function ShortcutsPortal({
   elementId,
-  setEditingListId,
+  setActiveListId,
+  setIsEditingList,
 }: {
   elementId: string;
-  setEditingListId: (listId: string | null) => void;
+  setActiveListId: (listId: string | null) => void;
+  setIsEditingList: (isEditing: boolean) => void;
 }) {
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
 
@@ -271,7 +273,10 @@ export function ShortcutsPortal({
     dispatch({
       type: 'list/inserted',
       onListInserted: (list) => {
-        setTimeout(() => setEditingListId(list.id), 0); // Avoid bad setState on render
+        setTimeout(() => {
+          setActiveListId(list.id);
+          setIsEditingList(true);
+        }, 0); // Avoid bad setState on render
       },
     });
   };

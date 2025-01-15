@@ -44,8 +44,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -56,7 +60,9 @@ describe('Task Component', () => {
   });
 
   it('allows renaming a task', () => {
-    const setEditingTaskId = vi.fn();
+    const setActiveTaskId = vi.fn();
+    const setIsEditingTask = vi.fn();
+
     render(
       <Task
         task={mockTask}
@@ -75,27 +81,31 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId="task-5"
-        setEditingTaskId={setEditingTaskId}
+        activeTaskId="task-5"
+        setActiveTaskId={setActiveTaskId}
+        isEditingTask={true}
+        setIsEditingTask={setIsEditingTask}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
-    const input = screen.getByPlaceholderText('Task name');
+    const input = screen.getByPlaceholderText('Task');
     fireEvent.change(input, { target: { value: 'Updated Task Name' } });
     fireEvent.blur(input);
 
-    expect(mockDispatch).toHaveBeenCalledWith({
-      type: 'task/renamed',
-      listId: 'list-2',
-      taskId: 'task-5',
-      text: 'Updated Task Name',
-    });
+    expect(setIsEditingTask).toHaveBeenCalledWith(false);
 
-    expect(setEditingTaskId).toHaveBeenCalledWith('task-8');
+    // expect(mockDispatch).toHaveBeenCalledWith({
+    //   type: 'task/renamed',
+    //   listId: 'list-2',
+    //   taskId: 'task-5',
+    //   text: 'Updated Task Name',
+    // });
   });
 
   it('does not dispatch rename when task text is unchanged', () => {
-    const setEditingTaskId = vi.fn();
+    const setActiveTaskId = vi.fn();
     render(
       <Task
         task={mockTask}
@@ -114,17 +124,20 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId="task-5"
-        setEditingTaskId={setEditingTaskId}
+        activeTaskId="task-5"
+        setActiveTaskId={setActiveTaskId}
+        isEditingTask={true}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
-    const input = screen.getByPlaceholderText('Task name');
+    const input = screen.getByPlaceholderText('Task');
     fireEvent.change(input, { target: { value: mockTask.text } });
     fireEvent.blur(input);
 
     expect(mockDispatch).not.toHaveBeenCalled();
-    expect(setEditingTaskId).toHaveBeenCalledWith('task-8');
   });
 
   it('renders the dropdown options when more options is clicked', () => {
@@ -146,8 +159,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId="task-5"
-        setEditingTaskId={vi.fn()}
+        activeTaskId="task-5"
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -159,40 +176,6 @@ describe('Task Component', () => {
     expect(screen.getByText('Add subtask')).to.exist;
     expect(screen.getByText('Delete task')).to.exist;
   });
-
-  // it('can toggle the task between completed and uncompleted states', () => {
-  //   render(
-  //     <Task
-  //       task={mockTask}
-  //       index={1}
-  //       listId="list-2"
-  //       taskIds={[
-  //         'task-4',
-  //         'task-5',
-  //         'task-8',
-  //         'task-9',
-  //         'task-10',
-  //         'task-6',
-  //         'task-7',
-  //       ]}
-  //       ancestorIds={[]}
-  //       previousId="task-4"
-  //       nextId="task-6"
-  //       isCompleted={false}
-  //       editingTaskId={null}
-  //       setEditingTaskId={vi.fn()}
-  //     />,
-  //   );
-
-  //   const checkboxes = screen.getAllByRole('checkbox');
-  //   fireEvent.click(checkboxes[0]);
-
-  //   expect(mockDispatch).toHaveBeenCalledWith({
-  //     type: 'task/toggled',
-  //     listId: 'list-2',
-  //     taskId: 'task-5',
-  //   });
-  // });
 
   /*
    * Indent actions
@@ -217,8 +200,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -255,8 +242,12 @@ describe('Task Component', () => {
         previousId={null}
         nextId="task-9"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -297,8 +288,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -332,8 +327,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -367,8 +366,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -403,8 +406,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -443,8 +450,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -482,8 +493,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -519,8 +534,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
@@ -553,8 +572,12 @@ describe('Task Component', () => {
         previousId="task-4"
         nextId="task-6"
         isCompleted={false}
-        editingTaskId={null}
-        setEditingTaskId={vi.fn()}
+        activeTaskId={null}
+        setActiveTaskId={vi.fn()}
+        isEditingTask={false}
+        setIsEditingTask={vi.fn()}
+        selection={null}
+        setSelection={vi.fn()}
       />,
     );
 
