@@ -404,7 +404,7 @@ export const List = ({
             ].map(({ tasks, isCompleted }) =>
               tasks.map((task, index) => (
                 <Task
-                  key={task.id}
+                  key={task.id + task.text}
                   task={task}
                   index={index}
                   listId={listId}

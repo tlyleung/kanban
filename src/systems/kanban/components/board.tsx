@@ -223,7 +223,7 @@ export const Board = () => {
       >
         {lists.map((list, listIndex) => (
           <List
-            key={list.id}
+            key={list.id + list.name}
             list={list}
             listIndex={listIndex}
             boardLength={lists.length}
